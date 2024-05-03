@@ -1,5 +1,5 @@
   
-
+//define what monkeys that should be drawn on the aside menu
   const monkeyTypes = [
     "Dart Monkey",
     "Boomerang Monkey",
@@ -8,7 +8,7 @@
     "Ice Monkey",
     "Glue Gunner",
   ];
-  
+//define at what points the rute turns
   const directions = [
     { x: 0, y: 208 },
     { x: 366, y: 208 },
@@ -30,12 +30,14 @@
   let hoverMonkey;
   let hoverClass;
 
+  //necessary variables for the game 
   let playerMoney, playerHealth, monkeys, balloons, projectiles, firstRoundPlayed;
   let autoplayOn = false;
   window.costModifier;
   window.speedModifier;
 
   function GameSetup() {
+    //checks difficulty and changes modifiers accordingly
     switch(difficulty){
       case 'easy':
         speedModifier = 1;
@@ -59,11 +61,13 @@
         playerHealth = 1;
     }
 
+    //makes the arrays empty
     monkeys = [];
     balloons = [];
     projectiles = [];
     firstRoundPlayed = false;
 
+    //create the element where canvas and more will be placed
     const mainCreation = fsx('main', {id: 'main'}, [
       fsx('header', {id: 'header'}, [
         fsx('div', {}, [
@@ -85,21 +89,25 @@
     ])
     gameContainer.appendChild(mainCreation)
     
+    //define global variables, so it can be changed outside of the function
     window.moneyContainer = document.getElementById("money");
     window.healthContainer = document.getElementById("health");
     window.roundContainer = document.getElementById("round");
     window.main = document.getElementById("main");
 
+    //create and define route and the dimension for the rectangles that make out the map
     window.route = LoadRoute(directions, 0.1);
-    // console.log(route);
     window.rectDimensions = LoadMap(directions);
-    // console.log(rectDimensions);
 
+    //run the roundSetup, so the variables reset
     RoundSetup()
 
+    //create canvas and aside
     let cnv = createCanvas(750, 500);
     createAsideElements();
+    //add onclick events on canvas
     cnv.mousePressed(() => {
+      //removes upgrade menu and the range off monkeys
       const menu = document.getElementById("monkey-menu");
       if (menu) {
         main.removeChild(menu);
@@ -107,6 +115,7 @@
       monkeys.forEach((monkey) => {
         monkey.showRange = false;
       });
+      //places monkey
       if (hover) {
         MonkeyPlacement();
       }
@@ -115,8 +124,9 @@
   }
 
   function GameDraw() {
+    //displays the route
     DisplayRoute(rectDimensions);
-    //monkeys
+    //methods and code for the monkeys
     monkeys.forEach((monkey) => {
       monkey.display();
       monkey.findTarget();
@@ -124,11 +134,11 @@
         monkey.attack();
       }
     });
-    //balloons
+    //methods and code for the balloons
     balloons.forEach((bloon, index) => {
       bloon.display();
       bloon.move();
-      //Checks if bloon has completed route
+      //Checks if bloon has completed route and splices the object 
       const lastIndex = directions.length - 1;
       if (
         bloon.x === directions[lastIndex].x &&
@@ -139,20 +149,20 @@
         console.log('ballons', balloons.length)
         updateHeader();
 
+        //if there is no more lives you die
         if (playerHealth <= 0)
         {
           EndSetup('Died')
           gameState = 'end'
         }
-
-        //balloons.push(new Bloon())
       }
     });
-    //projectiles
+    //methods and code for the projectiles
     projectiles.forEach((projectile, projectileIndex) => {
       projectile.move();
       projectile.display();
       projectile.collision();
+      //checks if the projectile is out of the map
       if (projectile.x > width || projectile.x < 0) {
         if (projectile.y > height || projectile.y < 0) {
           projectiles.splice(projectileIndex, 1);
@@ -161,12 +171,14 @@
     });
     //draw hover object
     if (hover === true) {
+      //if you cant place show a red color
       if (!CanPlaceMonkey(hoverMonkey.diameter/2)){
         fill(255,0,0,100)
         circle(mouseX, mouseY, hoverMonkey.diameter);
         fill(255,0,0,50)
         circle(mouseX, mouseY, hoverMonkey.range)
       } 
+      //else show a normal color
       else {
         fill(hoverMonkey.color)
         circle(mouseX, mouseY, hoverMonkey.diameter);
@@ -190,7 +202,7 @@
       if (balloons.length !== 0){
         roundNotOver = true;
         startRoundButton.innerText = 'Round is playing'
-      } 
+      } //makes ready for the next round
       else if (balloons.length === 0 && stoppedSendingBloons === rounds[roundNumber].length && roundNotOver){
         roundNotOver = false;
         playerMoney += 100 + roundNumber
@@ -199,42 +211,47 @@
         stoppedSendingBloons = 0;
         updateHeader()
         checkWinCondition()
+        //plays next round if autoplay is on
         if (autoplayOn && !checkWinCondition()){
           roundPlay()
         }
       } 
   }
 
-
-    // moneyContainer.innerText = `🪙${playerMoney}`;
-
+//creates the route
 function LoadRoute(directions, stepDiff = 1) {
+  //sets the start point and gets ready to make the route
   let tempRoute = [];
   const startPoint = directions[0];
   const { x, y } = startPoint;
   let xCoor = x;
   let yCoor = y;
   let directionStep = 1;
+  //go over all the directions and push the steps into the array
   for (let i = 0; directionStep !== directions.length; i++) {
     const nextPoint = directions[directionStep];
     const { x, y } = nextPoint;
+    //checks which directions the x and y values need to be heading
     if (xCoor < x) xCoor += stepDiff;
     else if (xCoor > x) xCoor -= stepDiff;
     if (yCoor < y) yCoor += stepDiff;
     else if (yCoor > y) yCoor -= stepDiff;
+    //rounds cuz floating error
     xCoor = round(xCoor, 1);
     yCoor = round(yCoor, 1);
     tempRoute.push({ xCoor: xCoor, yCoor: yCoor });
+    //goes to next direction if current direction and step are the same coordinates
     if (xCoor === x && yCoor === y) {
       directionStep += 1;
     }
   }
   return tempRoute;
 }
-
+//creates the dimension for the road
 function LoadMap(directions) {
   let rectDimensions = [];
   for (let i = 0; i + 1 !== directions.length; i++) {
+    //set starting variables 
     const roadSize = 33;
     let rectHeight = roadSize;
     let rectWidth = roadSize;
@@ -242,11 +259,13 @@ function LoadMap(directions) {
     let rectY;
     const startPoint = directions[i];
     const { x, y } = startPoint;
+    //check if the height or the width needs to change
     if (x === directions[i + 1].x) {
       rectHeight = directions[i + 1].y - y;
     } else if (y === directions[i + 1].y) {
       rectWidth = directions[i + 1].x - x;
     }
+    //makes the value positive if it is negative and corrects position
     if (rectWidth < 0) {
       rectWidth *= -1;
       rectWidth += roadSize;
@@ -266,7 +285,7 @@ function LoadMap(directions) {
       rectX = x - roadSize / 2;
       rectY = y - rectHeight / 2;
     }
-
+    //pushes the object with dimensions into the array
     rectDimensions.push({
       x: rectX,
       y: rectY,
@@ -276,7 +295,7 @@ function LoadMap(directions) {
   }
   return rectDimensions;
 }
-
+//draws the route
 function DisplayRoute(
   rectDimensions,
   bgColor = "#227513",
@@ -289,7 +308,7 @@ function DisplayRoute(
     rect(road.x, road.y, road.width, road.height);
   });
 }
-
+//collision between rectangle and circle
 function DoRectCircleCollide(circX, circY, circR, rectX, rectY, rectW, rectH) {
   const distX = abs(circX - rectX - rectW / 2);
   const distY = abs(circY - rectY - rectH / 2);
@@ -311,16 +330,19 @@ function DoRectCircleCollide(circX, circY, circR, rectX, rectY, rectW, rectH) {
   //LINK - https://stackoverflow.com/questions/21089959/detecting-collision-of-rectangle-with-circle
 }
 
+//collision between circles
 function DoCirclesCollide(circ1X, circ1Y, circ1R, circ2X, circ2Y, circ2R) {
   return (
     sqrt((circ1X - circ2X) ** 2 + (circ1Y - circ2Y) ** 2) < circ1R + circ2R
   );
 }
 
+//stops the hover if escape or backspace is pressed
 function keyPressed() {
   if ((keyCode === 8 || keyCode === 27)&& keyIsPressed === true) hover = false;
 }
 
+//change values for hover variables
 function MonkeyButtonClicked(id, name, monkeyClass) {
   selectedMonkeyContainer.innerText = name;
   hover = true;
@@ -328,11 +350,13 @@ function MonkeyButtonClicked(id, name, monkeyClass) {
   hoverClass = monkeyClass;
 }
 
+//updates the display for money and health 
 function updateHeader() {
   moneyContainer.innerText = `💰${playerMoney}`;
   healthContainer.innerText = `❤️ ${playerHealth}`;
 }
 
+//creates the aside
 function createAsideElements() {
   const asideCreation = fsx('aside', {id: 'aside'}, [
     fsx('div', {className: 'aside-container'}, [
@@ -361,6 +385,7 @@ function createAsideElements() {
   ])
 
   gameContainer.appendChild(asideCreation)
+  //defines global variables, so they can be accessed
   window.startRoundButton = document.getElementById("start-round");
   window.selectedMonkeyContainer = document.getElementById(
     "selected-monkey-name"
@@ -369,6 +394,7 @@ function createAsideElements() {
   const monkeyButtonContainer = document.getElementById(
     "monkey-button-container"
   );
+  //add onclick listener to start round button that starts the round when clicked
   startRoundButton.addEventListener("click", () => {
     if (!roundNotOver && balloons.length === 0) {
       roundPlay();
@@ -377,7 +403,9 @@ function createAsideElements() {
       window.alert("round not over");
     }
   });
+  //creates the buttons you press to buy monkeys
   for (let i in monkeyTypes) {
+    //takes the string and makes 3 different strings so they make out the name, id and class
     const name = monkeyTypes[i];
     let idArray = [];
     let classArray = [];
@@ -392,19 +420,22 @@ function createAsideElements() {
     }
     const monkeyClass = classArray.join("");
     let cost;
+    //use the class to create an object and find the cost value
     if (monkeyClass === "DartMonkey" || monkeyClass === "BoomerangMonkey" || monkeyClass === "BombShooter") {
       const testMonkey = eval("new " + monkeyClass + "(0, 0)");
       cost = `💰${testMonkey.cost}`;
     }
     const tempId = idArray.join("");
     const id = tempId.toLowerCase();
-
+    //creates the button
     const button = fsx(
       "button",
       {
         className: "tower-button",
         id: id,
+        //uses id to find the image
         style: `background-image: url("/images/${id}.png")`,
+        //adds a onclick event
         onclick: () => {
           MonkeyButtonClicked(id, name, monkeyClass);
         },
@@ -418,6 +449,7 @@ function createAsideElements() {
   }
 }
 
+//deletes old menu and creates a new one
 function MonkeyMenu(id) {
   monkeys.forEach((monkey) => {
     if (monkey.id === id) {
@@ -432,8 +464,10 @@ function MonkeyMenu(id) {
   });
 }
 
+//checks if you can place monkey
 function CanPlaceMonkey(monkeyRadius) {
   let roadCollision, monkeyCollision;
+  //checks for road
   for (let i in rectDimensions) {
     if (
       !DoRectCircleCollide(
@@ -448,11 +482,11 @@ function CanPlaceMonkey(monkeyRadius) {
     ) {
       roadCollision = false;
     } else {
-      // console.log("no monke cuz road");
       roadCollision = true;
       break;
     }
   }
+  //checks for monkeys
   for (let i in monkeys) {
     if (
       !DoCirclesCollide(
@@ -466,41 +500,47 @@ function CanPlaceMonkey(monkeyRadius) {
     ) {
       monkeyCollision = false;
     } else {
-      // console.log("no monke cuz monke");
       monkeyCollision = true;
       break;
     }
   }
+  //if no collision return true
   if (!roadCollision && !monkeyCollision){
     return true;
   }
 }
 
+//creates and places the monkey
 function MonkeyPlacement() {
+  //create an object
   const testMonkey = eval('new '+hoverClass+'(0, 0, undefined, 0);')
+  //find the diameter of the monkey
   const monkeyRadius = testMonkey.diameter / 2;
+  //check if you have enough monkey
   if (testMonkey.cost >= playerMoney) {
     console.log("no money");
     window.alert("Not enough money");
     return 
   }
+  //can you places the monkey?
   if (!CanPlaceMonkey(monkeyRadius)) {
     window.alert("Can't place monkey here")
     return
   }
+  //is it within the map
     if (
       mouseX > monkeyRadius &&
       mouseX < width - monkeyRadius &&
       mouseY > monkeyRadius &&
       mouseY < height - monkeyRadius
     ) {
-      console.log("place monke");
+      //creates variables for the monkey and creates the monkey
       const id = crypto.randomUUID();
       monkeys.push(eval('new '+hoverClass+'(mouseX, mouseY, undefined, id)'));
       hover = false;
       playerMoney -= testMonkey.cost;
       updateHeader()
-      // const positionLeft = mouseX + (windowWidth - width - 206);
+      //creates the button for the monkey
       const MonkeyButton = fsx("button", {
         className: "monkey-button",
         style: `left: ${mouseX}px; top: ${mouseY}px;`,
@@ -512,14 +552,16 @@ function MonkeyPlacement() {
     }
 
 }
-
+//creates the upgrade element
 function CreateUpgradeElement(monkey) {
+  //finds on which side of the map the monkey is and place the upgrade element on the opposite side
   let left;
   if (monkey.x < width / 2) {
     left = "75%";
   } else {
     left = "0px";
   }
+  //create the upgrade element
   const monkeyMenu = fsx("div", { id: "monkey-menu", style: `left: ${left}` }, [
     fsx("div", { className: "info-container" }, [
       fsx("p", { id: "monkey" }, []),
@@ -619,7 +661,9 @@ function CreateUpgradeElement(monkey) {
   main.appendChild(monkeyMenu);
 }
 
+//update the upgrade element
 function UpdateUpgradeElement(monkey) {
+  //defines the variables in the upgrade element
   const nameContainer = document.getElementById("monkey");
   const popsContainer = document.getElementById("monkey-pops");
   const monkeyIdBox = document.getElementById("monkey-id")
@@ -649,12 +693,14 @@ function UpdateUpgradeElement(monkey) {
   const bottomNextUpgradeContainer = document.getElementById(
     "next-bottom-upgrade"
   );
+  //updates the elements with the correct values
   const sellButton = document.getElementById("sell-button");
   nameContainer.innerText = monkey.name;
   popsContainer.innerText = monkey.pops;
   monkeyIdBox.value = monkey.id
   targetModeContainer.innerText = monkey.targetMode;
   sellButton.innerText = `SELL \n 💰${monkey.sellPrice}`;
+  //find the current upgrades for all the paths and display the correct upgrade
   switch (monkey.upgradeInfo.top.currentUpgrade) {
     case 0:
       topCurrentUpgradeContainer.innerText = "No Upgrades";
@@ -748,13 +794,17 @@ if (monkey.upgradeInfo.top.status === 'locked') {
   }
 }
 
+//changes the monkey info
 function MonkeyChangeInfo(id, change) {
+  //defines the target modes
   const targetingList = ["first", "last", "close", "strong"];
   monkeys.forEach((monkey, monkeyIndex) => {
     if (monkey.id === id) {
+      //finds the monkeys target mode
       const index = targetingList.findIndex((value) => {
         return value === monkey.targetMode;
       });
+      //checks which path you can upgrade
       const CheckUpgradeStatus = ()=> {
         //top
         if (
@@ -802,18 +852,22 @@ function MonkeyChangeInfo(id, change) {
           }
         }
       }
+      //updates the monkey depending on which upgrade is chosen
       const UpdatePath = (path) => {
+        //checks if you can upgrade
         CheckUpgradeStatus()
         if (path.status !== 'locked' && path.currentUpgrade < 3) {
+          //define cost
           const upgradeCost =
             path.upgradePath[
               path.currentUpgrade
             ].cost;
-          // console.log(upgradeCost);
+          //if you can afford the run the effect of the upgrade
           if (playerMoney >= upgradeCost) {
             path.upgradePath[
               path.currentUpgrade
             ].effect(monkey);
+            //update values so they are correct
             path.currentUpgrade += 1;
             playerMoney -= upgradeCost;
             moneyContainer.innerText = `💰${playerMoney}`;
@@ -821,9 +875,10 @@ function MonkeyChangeInfo(id, change) {
           }
         }
       }
-      
+      //find out which action is needed
       switch (change) {
         case "back":
+          //change target mode one back
           if (index === 0) {
             monkey.targetMode = "strong";
           } else {
@@ -832,6 +887,7 @@ function MonkeyChangeInfo(id, change) {
           break;
 
         case "forward":
+          //change target mode one forward
           if (index === 3) {
             monkey.targetMode = "first";
           } else {
@@ -839,6 +895,7 @@ function MonkeyChangeInfo(id, change) {
           }
           break;
 
+        //update the upgrade path
         case "top":
           UpdatePath(monkey.upgradeInfo.top)
           break;
@@ -851,12 +908,16 @@ function MonkeyChangeInfo(id, change) {
           UpdatePath(monkey.upgradeInfo.bottom)
           break;
 
+        //sell the monkey
         case "sell":
+          //get money
           playerMoney += monkey.sellPrice;
           updateHeader();
+          //find button associated with monkey
           const soldMonkeyButton = document.getElementById(
             `monkey-${monkey.id}`
           );
+          //remove everything related
           const monkeyMenu = document.getElementById("monkey-menu");
           main.removeChild(monkeyMenu);
           monkeys.splice(monkeyIndex, 1);
@@ -865,8 +926,11 @@ function MonkeyChangeInfo(id, change) {
           break;
       }
       if (change !== "sell") {
+        //update the upgrade element
         UpdateUpgradeElement(monkey);
+        //check the upgrade status
         CheckUpgradeStatus();
+        //update element againg
         UpdateUpgradeElement(monkey);
       }
     }

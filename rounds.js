@@ -1,5 +1,6 @@
 function RoundSetup() {
 
+  //the rounds gets defined
   window.rounds = [
     [{ bloon: 'Red', amount: 20, space: 1, delay: 0 }],
     
@@ -72,16 +73,14 @@ function RoundSetup() {
     ],
   ];
 
-  // console.log(rounds.length)
-  window.roundNumber = 0; //round number - 1 cuz array
+  //defines variables needed for the round to work
+  window.roundNumber = 0; //round number - 1 because array
   window.roundNotOver = false;
   window.stoppedSendingBloons = 0;
   roundContainer.innerText = `round ${roundNumber + 1}`;
 }
 
 
-
-//NOTE - made a simpler round function cuz i needed to test it with rounds working. You can continue working on yours and comment this out when it works if you want
 function roundPlay(wave = 0) {
   //updates roundContainer
   roundContainer.innerText = `round ${roundNumber + 1}`;
@@ -97,15 +96,15 @@ function roundPlay(wave = 0) {
   //makes bloons for the current wave
   roundNotOver = true;
   startRoundButton.innerText = 'Round is playing';
+  //creates the amount of bloons and after the correct amount of time
   for (let i = 0; i < amount; i++) {
     setTimeout(() => {
       balloons.push(eval('new ' + ballon + '()'));
     }, space * i);
+    //if it is the last bloon in a wave i starts a timer to update the stopped sending bloons variable
     if (i === amount - 1) {
       setTimeout(() => {
         stoppedSendingBloons += 1;
-        console.log('stopped sending bloons', stoppedSendingBloons)
-        console.log('waves', rounds[roundNumber].length)
       }, space * i);
     }
   }

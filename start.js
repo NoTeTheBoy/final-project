@@ -1,4 +1,5 @@
 function StartSetup() {
+    //finds the difficulty from the radiobuttons and checkboxes
     const GetDifficulty = () => {
         const difficultySelectors = document.getElementsByName('difficulty')
         for (let i = 0; i < difficultySelectors.length; i++){
@@ -14,6 +15,7 @@ function StartSetup() {
           }
           else return false;
         } 
+    //creates the start menu
     const startMenu = fsx('div', {className: 'start-container'}, [
         fsx('h1', {}, [
             fsx(null, {}, ['Fake Bloons'])
@@ -37,10 +39,14 @@ function StartSetup() {
             ]),
         ]),
         fsx('button', {id: 'start-game-button', onclick: () => {
+            //when the start game button is pressed it updates the difficulty
             difficulty = GetDifficulty()
             impoppableSelected = IsImpoppableSelected()
+            //removes the start menu
             gameContainer.removeChild(startMenu)
+            //runs the setup for the game
             GameSetup()
+            //changes game state to the game
             gameState = 'game';
         }}, [
             fsx(null, {}, ['Start Game'])

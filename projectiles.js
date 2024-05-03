@@ -1,5 +1,6 @@
 class Dart {
   constructor(x, y, vectorAngle, monkeyId, {damage, pierce, speed, lifespan, ball = false}) {
+    //projectile variables
     this.x = x;
     this.y = y;
     this.heading = vectorAngle;
@@ -16,9 +17,12 @@ class Dart {
     }
     this.damageType = 'Sharp';
     this.diameter = 3 * unitConverter;
+    //id of the monkey that shot the projectile so it can transfer the pops
     this.monkeyId = monkeyId;
     this.ownId = crypto.randomUUID();
+    //array over bloons it has hit so it doesn't hit the same bloon twice
     this.bloonsHit = [];
+    //timer so it gets deleted after its lifespan is over
     setTimeout(() => {
       projectiles.forEach((projectile, index) => {
         if (projectile.ownId === this.ownId){
@@ -28,10 +32,15 @@ class Dart {
     }, this.lifespan)
   }
 
+  //checks if it collides with a ballon
   collision() {
     balloons.forEach((bloon, ballonIndex) => {
+      //has it hit the balloon before
       if (this.bloonsHit.includes(bloon.id)) return;
+      //does it hit it
       if (!DoCirclesCollide(this.x, this.y, this.diameter / 2, bloon.x, bloon.y, bloon.diameter / 2)) return;
+      
+      //give pops to monkey and update upgrade element
       monkeys.forEach((monkey) => {
         if (this.monkeyId === monkey.id){
           monkey.pops += 1;
@@ -41,12 +50,15 @@ class Dart {
             }
           }
         }
-      })        
+      }) 
+      //runs the bloon popped method and deletes the bloon       
       if (bloon.defense <= 0) {
         bloon.popped(this.damage)
         balloons.splice(ballonIndex, 1);
       }      
+      //removes one pierce 
       this.pierce -= 1;
+      //deletes when pierce is 0 or less than 0
       if (this.pierce <= 0){
         projectiles.forEach((projectile, index) => {
           if (projectile.ownId === this.ownId){
@@ -54,16 +66,19 @@ class Dart {
           }
         })
       }
+      //adds the bloon the the hit balloons array
       this.bloonsHit.push(bloon.id)
     });
   }
 
+  //moves the projectile according to the heading
   move() {
     const vector = p5.Vector.fromAngle(this.heading, this.speed);
     this.x -= vector.x;
     this.y -= vector.y;
   }
 
+  //shows the projectile and rotates it so i faces the correct heading
   display() {
     if (!this.ball){
     push()
@@ -88,33 +103,46 @@ class Dart {
 class Boomerang extends Dart {
   constructor(x, y, vectorAngle, monkeyId, {damage, pierce, speed, lifespan, kylie, ricochet }, range = 161){
     super(x, y, vectorAngle, monkeyId, {damage, pierce, speed, lifespan: 10})
+    //variables for the projectile
     this.damage = 1 + damage; //damage it does to bloon
     this.pierce = 4 + pierce; //how many bloons it can hit before it disappears
     this.speed = 10 * speed;
+    //radius of the circle the projectile moves in
     this.attackRadius = range/4
+    //starting vector
     this.vector = p5.Vector.fromAngle(vectorAngle, this.attackRadius);
+    //center for the circle
     this.centerX = x - this.vector.x;
     this.centerY = y - this.vector.y;
+    //current position on the circle in angles 
     this.currentAngle = vectorAngle;
+    //coordinates for where the balloon started
     this.originX = x;
     this.originY = y
+    //if it can be deleted
     this.canBeDeleted = false
+    //the angle of the rotation of the projectile
     this.rotationAngle = vectorAngle;
+    //which movement the projectile should follow
     this.kylie = kylie;
     this.ricochet = ricochet;
+    //variable for kylie movement
     this.direction = 'forward';
     this.range = range
+    //can be deleted after 100 ms
     setTimeout(() => {
       this.canBeDeleted = true;
     }, 100)
   }
 
+  //change heading the projectile
   changeHeading(bloon) {
     const projectileVector = createVector(this.x, this.y);
     const bloonVector = createVector(bloon.x, bloon.y);
     this.heading = p5.Vector.sub(projectileVector, bloonVector).heading();
   }
 
+  //find the target
   findTarget(){
     let closestBloonDist;
     if (balloons.length === 0) return;
@@ -131,6 +159,7 @@ class Boomerang extends Dart {
     })
   }
 
+  //almost works the as the dart
   collision() {
     balloons.forEach((bloon, ballonIndex) => {
       if (this.bloonsHit.includes(bloon.id)) return;
@@ -147,7 +176,7 @@ class Boomerang extends Dart {
         })
       }
       this.bloonsHit.push(bloon.id)
-      //can hit after 3 seconds
+      //can hit after 3 seconds if kylie movement is true
       if (this.kylie){
         setTimeout(() => {
           const index = this.bloonsHit.indexOf(bloon.id)
@@ -167,23 +196,27 @@ class Boomerang extends Dart {
       })   
     });
   }
-
+  //movement for the projectile
   move() {
+    //if there is no special movement then it moves in a circle
     if (!this.kylie && !this.ricochet){
     this.currentAngle -= 0.2
     this.x = this.centerX + cos(this.currentAngle)*this.attackRadius;
     this.y = this.centerY + sin(this.currentAngle)*this.attackRadius;
-    } else if (this.kylie){
+    } //if kylie then it moves in a straight line and the comes back
+    else if (this.kylie){
       const kylieVector = p5.Vector.fromAngle(this.heading, this.speed);
+      //when it moves forward
       if (this.direction === 'forward'){
         this.x -= kylieVector.x;
         this.y -= kylieVector.y;
       }
+      //when it moves back
       else if (this.direction === 'backward'){
         this.x += kylieVector.x
         this.y += kylieVector.y
-        console.log('back')
       }
+      //if projectile is on the perimeter of the monkeys range it waits 300 ms and then turns back
       if (dist(this.x, this.y, this.originX, this.originY) > this.range){
         this.direction = 'wait'
         setTimeout(() => {
@@ -191,12 +224,14 @@ class Boomerang extends Dart {
         }, 300)
       } 
     } else {
+      //tracks balloons and the moves according to heading 
       this.findTarget()
       const vector = p5.Vector.fromAngle(this.heading, this.speed);
       this.x -= vector.x;
       this.y -= vector.y;
     }
    
+    //if it can be deleted then delete it if it comes to close to the monkeys
     if (this.canBeDeleted){
       if (abs(this.originX - this.x) < 10 && abs(this.originY - this.y) < 10){
         projectiles.forEach((projectile, index) => {
@@ -209,8 +244,9 @@ class Boomerang extends Dart {
   }
 
   
-
+  //show the projectile
   display() {
+    //rotates the boomerang
     push()
     fill(0);
     angleMode(RADIANS)
@@ -225,6 +261,7 @@ class Boomerang extends Dart {
 
 class Bomb {
   constructor(x, y, vectorAngle, monkeyId, {damage, pierce, speed, lifespan, blastRadius, knockback, fragment, cluster}){
+    //variables for the projectile. It doesn't inherit because it has a different function when lifespan is over
     this.x = x;
     this.y = y;
     this.heading = vectorAngle;
@@ -240,6 +277,7 @@ class Bomb {
     this.monkeyId = monkeyId;
     this.ownId = crypto.randomUUID();
     this.bloonsHit = [];
+    //explodes when lifespan is over
     setTimeout(() => {
       projectiles.forEach((projectile, index) => {
         if (projectile.ownId === this.ownId){
@@ -267,13 +305,16 @@ class Bomb {
         ballonsInRange.push({ballon: balloons[blastIndex], distance: distance});
       }
     });
+    //sorts the balloons according to distance
     if (ballonsInRange.length > 0) {
       ballonsInRange.sort((a, b) => {
         return (a.distance - b.distance);
       })
+      //pops as many balloons as it has pierce
       try {
       ballonsInRange.forEach((object) => {
         if (object.pierce <= 0) {
+          //if there is no more pierce it breaks out of loop
           throw new Error('Break Loop')
         }
         if (object.knockback){
@@ -292,6 +333,7 @@ class Bomb {
       })}
       catch (error) {}
     }
+    //finds monkey and updates pop and upgrade element
     monkeys.forEach((monkey) => {
       if (object.monkeyId === monkey.id){
         monkey.pops += pops;
@@ -303,6 +345,7 @@ class Bomb {
       }
     })
     
+    //splice the projectile
     projectiles.forEach((projectile, index) => {
       if (projectile.ownId === object.ownId){
         projectiles.splice(index, 1)
@@ -317,16 +360,20 @@ class Bomb {
     
       this.explosion(this)
 
+      // if fragments upgrade is purchased it spawns fragments add shoots the out from the center of the bomb
       if (this.fragment.isActivated){
-        console.log('frags')
+        //finds start heading
         let fragAngle = this.heading
+        //finds the increase in angle after each fragment
         const angleIncrease = 6.28/this.fragment.count;
+        //creates and pushes new fragments
         for (let i = 0; i < this.fragment.count; i++){
           projectiles.push(new Fragment(this.x, this.y, fragAngle, this.monkeyId, this.fragment))
+          //changes angle
           fragAngle += angleIncrease * i;
         }
+        //if cluster is purchases is spawns bombs instead of fragments
       } else if (this.cluster){
-        console.log('cluster')
         let fragAngle = this.heading
         const angleIncrease = 6.28/8;
         for (let i = 0; i < 8; i++){

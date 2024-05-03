@@ -1,5 +1,6 @@
 class DartMonkey {
   constructor(x, y, color = '#7d461d', id = 0) {
+    //variables for monkey
     this.x = x;
     this.y = y;
     this.id = id;
@@ -10,16 +11,18 @@ class DartMonkey {
     this.name = 'Dart Monkey';
     this.pops = 0;
     this.showRange = false;
+    this.cost = round(costModifier * 200);
+
     //variables for eyes
     this.eyeSize = 6;
     this.eyeAngleDiff = 0.8 + 3.14;
     this.eyeDistFromCenter = this.diameter / 4;
     
+    //variables for attacks
     this.projectile = Dart;
     this.attackSpeed = 0.95; //per second
     this.hasTarget;
     this.canAttack = true;
-    this.cost = round(costModifier * 200);
     this.camoDetection = false;
     this.projectileModifier = { damage: 0, pierce: 0, speed: 1, lifespan: 1, ball: false};
     this.upgradeInfo = {
@@ -117,6 +120,7 @@ class DartMonkey {
     this.tripleShot = false;
   }
 
+  //change which ballon it faces
   changeHeading(bloon) {
     const monkeyVector = createVector(this.x, this.y);
     const bloonVector = createVector(bloon.x, bloon.y);
@@ -124,21 +128,26 @@ class DartMonkey {
     this.hasTarget = true;
   }
 
+  //find which ballon is should target
   findTarget() {
+    //checks if there is any balloons
     if (balloons.length === 0) {
       this.hasTarget = false;
       return;
     }
+    //finds balloons which are in range
     let ballonsInRange = [];
     balloons.forEach((bloon, index) => {
       if (dist(this.x, this.y, bloon.x, bloon.y) < this.range / 2) {
         ballonsInRange.push(balloons[index]);
       }
     });
+    //checks if there are any ballons in range
     if (ballonsInRange.length === 0) {
       this.hasTarget = false;
       return;
     }
+    //prioritizes the balloons depending on target mode
     switch (this.targetMode) {
       case 'first':
         let highestStep1;
@@ -198,8 +207,10 @@ class DartMonkey {
     }
   }
 
+  //attacks
   attack() {
     if (this.canAttack) {
+      //create a ned projectile
       projectiles.push(new this.projectile(this.x, this.y, this.heading, this.id, this.projectileModifier));
       if (this.tripleShot) {
         const secondHeading = this.heading + 0.26;
@@ -207,13 +218,16 @@ class DartMonkey {
         projectiles.push(new this.projectile(this.x, this.y, secondHeading, this.id, this.projectileModifier));
         projectiles.push(new this.projectile(this.x, this.y, thirdHeading, this.id, this.projectileModifier));
       }
+      //starts the timer for when it can attack again
       setTimeout(() => {
         this.canAttack = true;
       }, this.attackSpeed * 1000);
     }
+    //make it so it can't attack right away
     this.canAttack = false;
   }
 
+  //show the monkey
   display() {
     //main body
     fill(this.color);
@@ -245,6 +259,7 @@ class DartMonkey {
 class BoomerangMonkey extends DartMonkey {
   constructor(x, y, color = '#DE9331', id = 0) {
     super(x, y, color, id);
+    //change variables specific for this monkey
     this.name = 'Boomerang Monkey';
     this.cost = round(costModifier * 325);
     this.sellPrice  = this.cost / 2;
@@ -341,6 +356,7 @@ class BoomerangMonkey extends DartMonkey {
   }
 
   attack() {
+    //does the same as the last one but adds range
     if (this.canAttack) {
       projectiles.push(new this.projectile(this.x, this.y, this.heading, this.id, this.projectileModifier, this.range));
       setTimeout(() => {
@@ -354,6 +370,7 @@ class BoomerangMonkey extends DartMonkey {
 class BombShooter extends DartMonkey {
   constructor(x, y, color = '#453f3f', id = 0) {
     super(x, y, color, id);
+    //change variables specific for this monkey
     this.cost = round(costModifier * 525);
     this.sellPrice  = this.cost / 2;
     this.attackSpeed = 1.5;
@@ -462,6 +479,7 @@ class BombShooter extends DartMonkey {
   }
 }
 
+//classes so it doesn't throw an error when nonfunctional monkeys are pressed
 class TackShooter extends DartMonkey {
   constructor(x, y, color = '#f707f3', id = 0) {
     super(x, y, color, id);
